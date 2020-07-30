@@ -6,6 +6,7 @@ import os from 'os';
 import path from 'path';
 import { v4 as uuid } from 'uuid';
 
+import CommandError from '../../CommandError';
 import log from '../../log';
 import prompt, { Question } from '../../prompt';
 import { askForUserProvided } from '../actions/promptForCredentials';
@@ -81,7 +82,16 @@ class RemoveKeystore implements IView {
       log.warn('There is no valid Keystore defined for this app');
       return null;
     }
+
     this.displayWarning();
+
+    if (ctx.nonInteractive) {
+      throw new CommandError(
+        'NON_INTERACTIVE',
+        "Deleting build credentials is a destructive operation. Start the CLI without the '--non-interactive' flag to delete the credentials."
+      );
+    }
+
     const questions: Question[] = [
       {
         type: 'confirm',
@@ -136,12 +146,20 @@ class DownloadKeystore implements IView {
   constructor(private experienceName: string, private options?: DownloadKeystoreOptions) {}
 
   async open(ctx: Context): Promise<IView | null> {
-    const { confirm } = await prompt({
-      type: 'confirm',
-      name: 'confirm',
-      message: 'Do you want to display the Android Keystore credentials?',
-      when: () => this.options?.displayCredentials === undefined && !this.options?.quiet,
-    });
+    let confirm;
+
+    if (ctx.nonInteractive) {
+      confirm = true;
+    } else {
+      const result = await prompt({
+        type: 'confirm',
+        name: 'confirm',
+        message: 'Do you want to display the Android Keystore credentials?',
+        when: () => this.options?.displayCredentials === undefined && !this.options?.quiet,
+      });
+
+      confirm = result.confirm;
+    }
 
     const keystoreObj = await ctx.android.fetchKeystore(this.experienceName);
 

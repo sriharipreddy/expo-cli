@@ -1,5 +1,6 @@
 import isEmpty from 'lodash/isEmpty';
 
+import CommandError from '../../CommandError';
 import log from '../../log';
 import prompt from '../../prompt';
 import { displayAndroidAppCredentials } from '../actions/list';
@@ -19,6 +20,13 @@ class ExperienceView implements IView {
       log.newLine();
       await displayAndroidAppCredentials(credentials);
       log.newLine();
+    }
+
+    if (ctx.nonInteractive) {
+      throw new CommandError(
+        'NON_INTERACTIVE',
+        "Start the CLI without the '--non-interactive' flag to manage keystores."
+      );
     }
 
     const { action } = await prompt([

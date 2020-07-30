@@ -81,6 +81,36 @@ describe('RemoveKeystore', () => {
       expect(ctx.android.fetchKeystore.mock.calls.length).toBe(2);
       expect(ctx.android.removeKeystore.mock.calls.length).toBe(1);
     });
+
+    it('should not display a prompt in non-interactive mode', async () => {
+      const ctx = getCtxMock({ nonInteractive: true });
+
+      // first: prompt with warning message, true means continue
+      // second: ask if cli should display credentials, user won't see that because when() should return false
+      (prompt as any)
+        .mockImplementationOnce(() => ({ confirm: true }))
+        .mockImplementationOnce(question => {
+          if (question.when()) {
+            throw new Error("shouldn't happen");
+          }
+          return { confirm: undefined };
+        })
+        .mockImplementation(() => {
+          throw new Error("shouldn't happen");
+        });
+
+      const view = new RemoveKeystore(testExperienceName);
+
+      expect.assertions(2);
+
+      try {
+        await view.open(ctx);
+      } catch (e) {
+        expect(e.message).toMatch('Deleting build credentials is a destructive operation');
+      }
+
+      expect(prompt).not.toHaveBeenCalled();
+    });
   });
 
   describe('no credentials', () => {

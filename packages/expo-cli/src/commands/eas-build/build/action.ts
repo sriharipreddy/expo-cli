@@ -48,7 +48,7 @@ async function buildAction(projectDir: string, options: BuildOptions): Promise<v
   const ctx = await createBuilderContextAsync(
     projectDir,
     easConfig,
-    options.parent?.nonInteractive === true
+    options.parent?.nonInteractive
   );
   const projectId = await ensureProjectExistsAsync(ctx.user, {
     accountName: ctx.accountName,
@@ -70,7 +70,7 @@ async function buildAction(projectDir: string, options: BuildOptions): Promise<v
 async function createBuilderContextAsync(
   projectDir: string,
   eas: EasConfig,
-  nonInteractive: boolean
+  nonInteractive: boolean = false
 ): Promise<BuilderContext> {
   const user: User = await UserManager.ensureLoggedInAsync();
   const { exp } = getConfig(projectDir);
